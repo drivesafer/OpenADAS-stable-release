@@ -709,6 +709,8 @@ tiles.on('tileload',()=>{tileFailures=0;$('mapStatus').style.display='none';});
 map.createPane('context');map.getPane('context').style.zIndex=390;
 map.createPane('selected');map.getPane('selected').style.zIndex=410;
 map.createPane('osmWays');map.getPane('osmWays').style.zIndex=420;
+// The upper pane only paints road highlights; clicks pass through to the shared POI renderer.
+map.getPane('osmWays').style.pointerEvents='none';
 const contextRenderer=L.canvas({pane:'context',padding:.2}),renderer=L.canvas({pane:'selected',padding:.2});
 const context=L.layerGroup().addTo(map),points=L.layerGroup().addTo(map),focus=L.layerGroup().addTo(map);
 const valid=p=>Number.isFinite(p[1])&&Number.isFinite(p[2]);
@@ -837,7 +839,14 @@ function osmWayPopup(entry){
 }
 function drawOsmWays(){
  osmLayer.clearLayers();osmLines.clear();if(!$('showOsm').checked)return;
- for(const entry of osmSelection.entries){const w=osmWays[entry.index];L.polyline(w.pts,{renderer:osmRenderer,color:'#fff',weight:9,opacity:.9,interactive:false}).addTo(osmLayer);const line=L.polyline(w.pts,{renderer:osmRenderer,color:osmEntryColor(entry),weight:5,opacity:.95,dashArray:entry.twin?'9 5':null}).bindTooltip(w.name+' · way/'+w.id).bindPopup(()=>osmWayPopup(entry),{maxWidth:340}).addTo(osmLayer);osmLines.set(entry.index,line);}
+ for(const entry of osmSelection.entries){
+  const w=osmWays[entry.index];
+  L.polyline(w.pts,{renderer:osmRenderer,color:'#fff',weight:9,opacity:.9,interactive:false}).addTo(osmLayer);
+  L.polyline(w.pts,{renderer:osmRenderer,color:osmEntryColor(entry),weight:5,opacity:.95,dashArray:entry.twin?'9 5':null,interactive:false}).addTo(osmLayer);
+  // Hit targets share the POI canvas, so Leaflet can prioritize a POI at the same position.
+  const line=L.polyline(w.pts,{renderer,color:osmEntryColor(entry),weight:9,opacity:0}).bindTooltip(w.name+' · way/'+w.id).bindPopup(()=>osmWayPopup(entry),{maxWidth:340}).addTo(osmLayer);
+  line.bringToBack();osmLines.set(entry.index,line);
+ }
 }
 function updateOsmStreet(name){
  osmSelection=matchOsmStreet(name);drawOsmWays();
