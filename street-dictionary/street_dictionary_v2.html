@@ -708,8 +708,8 @@ tiles.on('tileerror',()=>{if(++tileFailures>=3){$('mapStatus').textContent='Chư
 tiles.on('tileload',()=>{tileFailures=0;$('mapStatus').style.display='none';});
 map.createPane('context');map.getPane('context').style.zIndex=390;
 map.createPane('selected');map.getPane('selected').style.zIndex=410;
-map.createPane('osmWays');map.getPane('osmWays').style.zIndex=420;
-// The upper pane only paints road highlights; clicks pass through to the shared POI renderer.
+map.createPane('osmWays');map.getPane('osmWays').style.zIndex=400;
+// Road highlights stay below POIs; clicks pass through to the shared POI renderer.
 map.getPane('osmWays').style.pointerEvents='none';
 const contextRenderer=L.canvas({pane:'context',padding:.2}),renderer=L.canvas({pane:'selected',padding:.2});
 const context=L.layerGroup().addTo(map),points=L.layerGroup().addTo(map),focus=L.layerGroup().addTo(map);
