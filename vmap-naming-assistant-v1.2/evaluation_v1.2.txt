@@ -1,0 +1,87 @@
+VMap Naming Assistant v1.2.0 — đánh giá
+Nhãn: 3.891 bản ghi (labels_v2), chia theo người đóng góp: train 3.077 (86 người) / test 814 (22 người chưa từng thấy).
+Chọn phương án bằng kiểm định chéo 4-fold theo người đóng góp TRÊN TRAIN; tập test chỉ dùng để báo số cuối.
+Số dưới đây: engine học CHỈ từ train, đo trên test. Bản phát hành học lại từ toàn bộ 3.891 nhãn.
+
+== Phát hiện lỗi theo trường (test)
+v1.0:
+name {"P":0.909,"R":0.858,"F1":0.883,"tp":399,"fp":40,"fn":66,"tn":309} fix-exact 254/458
+house {"P":0.99,"R":0.889,"F1":0.937,"tp":392,"fp":4,"fn":49,"tn":369} fix-exact 168/309
+street {"P":0.997,"R":0.977,"F1":0.986,"tp":292,"fp":1,"fn":7,"tn":514} fix-exact 226/252
+v1.1:
+name {"P":0.919,"R":0.854,"F1":0.885,"tp":397,"fp":35,"fn":68,"tn":314} fix-exact 249/458
+house {"P":0.99,"R":0.889,"F1":0.937,"tp":392,"fp":4,"fn":49,"tn":369} fix-exact 187/309
+street {"P":0.997,"R":0.98,"F1":0.988,"tp":293,"fp":1,"fn":6,"tn":514} fix-exact 222/252
+v1.2:
+name {"P":0.918,"R":0.886,"F1":0.902,"tp":412,"fp":37,"fn":53,"tn":312} fix-exact 254/458
+house {"P":0.991,"R":0.961,"F1":0.976,"tp":424,"fp":4,"fn":17,"tn":369} fix-exact 189/309
+street {"P":0.997,"R":0.98,"F1":0.988,"tp":293,"fp":1,"fn":6,"tn":514} fix-exact 222/252
+(fix-exact = gợi ý trùng y hệt giá trị annotator viết)
+
+== Gợi ý category (test, 772 bản ghi có category)
+v1.1: top1 0.662 top3 0.808 (L2 + cắt trọng số, từ vựng dạng chuỗi, mô hình ~340 KB)
+v1.2: {"which":"test","n":772,"top1":0.663,"top3":0.817,"domain_top1":0.789,"no_features":0,"confident_share":0.573,"confident_acc":0.844}  (L1 + feature hashing + int8, mô hình ~95 KB)
+
+== Thử nghiệm category (CV 4-fold theo người đóng góp trên train; top1 / top3 / số trọng số khác 0)
+{"cfg": "base", "cv_top1": 0.5403, "cv_top3": 0.7129, "nnz": 24244, "vocab": 6495, "s": 44}
+{"cfg": "c25", "cv_top1": 0.5416, "cv_top3": 0.7116, "nnz": 21253, "vocab": 4671, "s": 35}
+{"cfg": "c35", "cv_top1": 0.5396, "cv_top3": 0.7139, "nnz": 22781, "vocab": 6031, "s": 43}
+{"cfg": "C5", "cv_top1": 0.5386, "cv_top3": 0.7062, "nnz": 20759, "vocab": 6495, "s": 86}
+{"cfg": "C20", "cv_top1": 0.5366, "cv_top3": 0.7139, "nnz": 27383, "vocab": 6495, "s": 59}
+{"cfg": "ctx", "cv_top1": 0.5328, "cv_top3": 0.7055, "nnz": 24104, "vocab": 6495, "s": 58}
+{"cfg": "ens", "cv_top1": 0.542, "cv_top3": 0.7153, "nnz": 24244, "vocab": 6495, "s": 53}
+{"cfg": "hash", "cv_top1": 0.5423, "cv_top3": 0.7089, "nnz": 25121, "vocab": 6698, "s": 67}
+{"cfg": "hash14", "cv_top1": 0.5376, "cv_top3": 0.7106, "nnz": 25726, "vocab": 6713, "s": 47}
+{"cfg": "q8", "cv_top1": 0.541, "cv_top3": 0.7126, "nnz": 24244, "vocab": 6495, "s": 49}
+{"cfg": "thr5", "cv_top1": 0.5325, "cv_top3": 0.7034, "nnz": 14377, "vocab": 6495, "s": 44}
+{"cfg": "thr8", "cv_top1": 0.5166, "cv_top3": 0.6777, "nnz": 6659, "vocab": 6495, "s": 44}
+{"cfg": "l1", "cv_top1": 0.5481, "cv_top3": 0.7062, "nnz": 3500, "vocab": 6495, "s": 168}
+{"cfg": "l1C20", "cv_top1": 0.5467, "cv_top3": 0.7116, "nnz": 4941, "vocab": 6495, "s": 216}
+{"cfg": "l1C40", "cv_top1": 0.5447, "cv_top3": 0.7156, "nnz": 7743, "vocab": 6495, "s": 258}
+Kết luận: ngữ cảnh địa chỉ (ctx), ensemble NB, đổi C, đổi n-gram ký tự đều nằm trong ±0,5 điểm (nhiễu) -> không áp dụng.
+Hashing 2^15 và int8 không mất độ chính xác -> áp dụng. L1 (C=20) giữ top1/top3 với ~5x ít trọng số -> áp dụng.
+
+== Thử nghiệm phát hiện lỗi
+E6 lọc luật có precision thấp: không đổi F1 (không có mẫu luật nào precision thấp đủ nhiều) -> không áp dụng.
+E7 bộ phân loại phụ (stacking): tên +0,6 điểm CV, số nhà +1,6 điểm CV. Phân tích những ca nó 'cứu' cho thấy
+   đều là lỗ hổng luật (CT4/BT2, 'Lô 10', số nhà '0', ngoặc, 'tâng', TOÀN HOA giữa tên, mô tả sau ' - ',
+   brand + TTTM không có ' - ', cụm cơ quan chính thức) -> sửa thẳng vào luật thay vì thêm mô hình.
+
+== Train (để so mức khớp)
+name {"P":0.918,"R":0.865,"F1":0.891,"tp":1492,"fp":134,"fn":232,"tn":1219} fix-exact 868/1631
+house {"P":0.986,"R":0.987,"F1":0.986,"tp":2120,"fp":31,"fn":29,"tn":897} fix-exact 1292/1630
+street {"P":0.987,"R":0.994,"F1":0.99,"tp":1244,"fp":16,"fn":8,"tn":1809} fix-exact 821/951
+
+== Theo mã lỗi (test, v1.2)
+A1.3 {"P":1,"R":0.8,"F1":0.889,"tp":4,"fp":0,"fn":1}
+A11.1 {"P":0.904,"R":0.757,"F1":0.824,"tp":103,"fp":11,"fn":33}
+A11.4 {"P":1,"R":0.381,"F1":0.552,"tp":8,"fp":0,"fn":13}
+A12.4 {"P":1,"R":1,"F1":1,"tp":1,"fp":0,"fn":0}
+A2.1 {"P":0.857,"R":1,"F1":0.923,"tp":18,"fp":3,"fn":0}
+A2.2 {"P":0.714,"R":1,"F1":0.833,"tp":5,"fp":2,"fn":0}
+A2.4 {"P":1,"R":0.5,"F1":0.667,"tp":1,"fp":0,"fn":1}
+A2.5 {"P":0.849,"R":0.967,"F1":0.904,"tp":202,"fp":36,"fn":7}
+A2.6 {"P":1,"R":0.868,"F1":0.93,"tp":33,"fp":0,"fn":5}
+A2.7 {"P":0.917,"R":0.826,"F1":0.869,"tp":209,"fp":19,"fn":44}
+A3.1 {"P":1,"R":1,"F1":1,"tp":1,"fp":0,"fn":0}
+A3.3 {"P":1,"R":0.5,"F1":0.667,"tp":1,"fp":0,"fn":1}
+A3.4 {"P":0.542,"R":0.867,"F1":0.667,"tp":13,"fp":11,"fn":2}
+A3.5 {"P":1,"R":0.826,"F1":0.905,"tp":19,"fp":0,"fn":4}
+A3.6 {"P":1,"R":0.667,"F1":0.8,"tp":2,"fp":0,"fn":1}
+A3.8 {"P":1,"R":0.8,"F1":0.889,"tp":4,"fp":0,"fn":1}
+A6.1 {"P":0.96,"R":0.985,"F1":0.972,"tp":193,"fp":8,"fn":3}
+A6.2 {"P":1,"R":0.2,"F1":0.333,"tp":3,"fp":0,"fn":12}
+A6.3 {"P":0.905,"R":0.731,"F1":0.809,"tp":19,"fp":2,"fn":7}
+A6.5 {"P":0,"R":0,"F1":0,"tp":0,"fp":0,"fn":5}
+A6.6 {"P":0.8,"R":0.267,"F1":0.4,"tp":4,"fp":1,"fn":11}
+A9.4 {"P":0.5,"R":1,"F1":0.667,"tp":1,"fp":1,"fn":0}
+P3.1 {"P":0.923,"R":0.632,"F1":0.75,"tp":12,"fp":1,"fn":7}
+P3.2 {"P":0.809,"R":0.813,"F1":0.811,"tp":191,"fp":45,"fn":44}
+P3.3 {"P":0,"R":0,"F1":0,"tp":0,"fp":0,"fn":14}
+P3.4 {"P":1,"R":0.778,"F1":0.875,"tp":21,"fp":0,"fn":6}
+P3.5 {"P":0.672,"R":0.574,"F1":0.619,"tp":39,"fp":19,"fn":29}
+P3.6 {"P":0.625,"R":0.714,"F1":0.667,"tp":20,"fp":12,"fn":8}
+P3.7 {"P":0,"R":0,"F1":0,"tp":0,"fp":1,"fn":7}
+P4.4 {"P":0.684,"R":0.739,"F1":0.71,"tp":65,"fp":30,"fn":23}
+P7.1 {"P":1,"R":1,"F1":1,"tp":42,"fp":0,"fn":0}
+P9.2 {"P":0.93,"R":0.625,"F1":0.748,"tp":40,"fp":3,"fn":24}
